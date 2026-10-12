@@ -80,6 +80,51 @@ def predict_next_score(roll_number, subject=None):
     return round(float(np.clip(prediction, 0, 100)), 2)
 
 
+def evaluate_prediction_error(roll_number, subject):
+    """
+    Evaluate historical predictions using rolling linear regression.
+    Returns the Mean Absolute Error (MAE) in percentage points.
+    Returns None when fewer than 3 exams are available.
+    """
+    scores = get_scores(roll_number)
+
+    # Keep only scores from the requested subject.
+    scores = [
+        s for s in scores
+        if s["subject"].lower() == subject.lower()
+    ]
+
+    if len(scores) < 3:
+        return None
+
+    scores = sorted(scores, key=lambda s: s["exam_date"])
+
+    # Convert scores to percentages.
+    percentages = np.array([
+        s["score"] / s["max_score"] * 100
+        for s in scores
+    ])
+
+    errors = []
+
+    # Predict each exam using only previous exams.
+    for i in range(2, len(percentages)):
+        training_scores = percentages[:i]
+        x = np.arange(len(training_scores))
+
+        slope, intercept = np.polyfit(x, training_scores, 1)
+
+        prediction = slope * i + intercept
+        prediction = round(float(np.clip(prediction, 0, 100)), 2)
+
+        actual = float(percentages[i])
+        error = abs(actual - prediction)
+
+        errors.append(error)
+
+    return round(float(np.mean(errors)), 2)
+
+
 def needs_attention(roll_number, score_threshold=50, attendance_threshold=75):
     """
     Flags a student as needing attention if their overall average is

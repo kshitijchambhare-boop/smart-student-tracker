@@ -86,6 +86,105 @@ def test_needs_attention_flags_low_average():
 
 
 def test_delete_student():
+
     student.add_student("Henry Ford", "R007", "Grade 9")
     assert student.delete_student("R007") is True
     assert student.get_student_by_roll("R007") is None
+
+
+def test_prediction_error_evaluation_single_backtest():
+    student.add_student("Test Student", "R008", "Grade 10")
+
+    student.add_score("R008", "Math", 60, 100, "2026-01-01")
+    student.add_score("R008", "Math", 70, 100, "2026-02-01")
+    student.add_score("R008", "Math", 82, 100, "2026-03-01")
+
+    mae = analytics.evaluate_prediction_error("R008", "Math")
+
+    assert mae == 2.0
+
+
+def test_prediction_error_not_enough_data():
+    student.add_student("Test Student", "R009", "Grade 10")
+
+    student.add_score("R009", "Math", 60, 100, "2026-01-01")
+    student.add_score("R009", "Math", 70, 100, "2026-02-01")
+
+    mae = analytics.evaluate_prediction_error("R009", "Math")
+
+    assert mae is None
+
+
+def test_prediction_error_subject_filtering():
+    student.add_student("Test Student", "R010", "Grade 10")
+
+    student.add_score("R010", "Math", 60, 100, "2026-01-01")
+    student.add_score("R010", "English", 95, 100, "2026-01-15")
+    student.add_score("R010", "Math", 70, 100, "2026-02-01")
+    student.add_score("R010", "Math", 82, 100, "2026-03-01")
+
+    mae = analytics.evaluate_prediction_error("R010", "Math")
+
+    assert mae == 2.0
+
+
+def test_prediction_error_different_max_scores():
+    student.add_student("Test Student", "R011", "Grade 10")
+
+    student.add_score("R011", "Math", 30, 50, "2026-01-01")
+    student.add_score("R011", "Math", 70, 100, "2026-02-01")
+    student.add_score("R011", "Math", 41, 50, "2026-03-01")
+
+    mae = analytics.evaluate_prediction_error("R011", "Math")
+
+    assert mae == 2.0
+
+
+def test_prediction_error_multiple_backtests():
+    student.add_student("Test Student", "R012", "Grade 10")
+
+    student.add_score("R012", "Math", 60, 100, "2026-01-01")
+    student.add_score("R012", "Math", 70, 100, "2026-02-01")
+    student.add_score("R012", "Math", 82, 100, "2026-03-01")
+    student.add_score("R012", "Math", 88, 100, "2026-04-01")
+
+    mae = analytics.evaluate_prediction_error("R012", "Math")
+
+    assert mae == 3.34
+
+
+
+def test_prediction_error_unsorted_dates():
+    student.add_student("Test Student", "R013", "Grade 10")
+
+    # Add scores in the wrong chronological order.
+    student.add_score("R013", "Math", 82, 100, "2026-03-01")
+    student.add_score("R013", "Math", 60, 100, "2026-01-01")
+    student.add_score("R013", "Math", 70, 100, "2026-02-01")
+
+    mae = analytics.evaluate_prediction_error("R013", "Math")
+
+    assert mae == 2.0
+
+
+
+def test_prediction_error_clipping():
+    student.add_student("Test Student", "R014", "Grade 10")
+
+    # Prediction would be 110, so it must be clipped to 100.
+    student.add_score("R014", "Math", 90, 100, "2026-01-01")
+    student.add_score("R014", "Math", 100, 100, "2026-02-01")
+    student.add_score("R014", "Math", 95, 100, "2026-03-01")
+
+    mae_high = analytics.evaluate_prediction_error("R014", "Math")
+
+    assert mae_high == 5.0
+
+    # Prediction would be -10, so it must be clipped to 0.
+    student.add_score("R014", "Science", 20, 100, "2026-01-01")
+    student.add_score("R014", "Science", 5, 100, "2026-02-01")
+    student.add_score("R014", "Science", 10, 100, "2026-03-01")
+
+    mae_low = analytics.evaluate_prediction_error("R014", "Science")
+
+    assert mae_low == 10.0
