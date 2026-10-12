@@ -43,16 +43,19 @@ smart-student-tracker/
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/<your-username>/smart-student-tracker.git
+git clone https://github.com/kshitijchambhare-boop/smart-student-tracker.git
 cd smart-student-tracker
 
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. (Optional) Seed sample data to explore the app immediately
+# 3. Create the database directory
+python -c "from pathlib import Path; Path('data').mkdir(exist_ok=True)"
+
+# 4. (Optional) Load sample data
 python seed_demo_data.py
 
-# 4. Run the app
+# 5. Run the application
 python main.py
 ```
 
@@ -127,13 +130,6 @@ Example:
 
 MAE measures historical prediction error and does not guarantee future accuracy.
 
-### Testing
-
-Run all unit tests:
-
-    python -m pytest tests/ -v
-
-Seven new unit tests cover the prediction error evaluation feature.
 
 ## 🗺️ Ideas for Extending This Project
 
