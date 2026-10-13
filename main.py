@@ -26,6 +26,7 @@ def menu():
  7. Generate class comparison chart
  8. List all students
  9. Delete student
+ 10. Evaluate prediction error
  0. Exit
 ==========================================
 """)
@@ -143,6 +144,29 @@ def delete_student_flow():
         print("✘ Student not found")
 
 
+def prediction_error_flow():
+    """Display historical prediction MAE for one student and subject."""
+    roll = input("Student roll number: ").strip()
+
+    s = student.get_student_by_roll(roll)
+    if not s:
+        print("Student not found.")
+        return
+
+    subject = input("Subject to evaluate: ").strip()
+    if not subject:
+        print("Subject cannot be empty.")
+        return
+
+    mae = analytics.evaluate_prediction_error(roll, subject)
+
+    if mae is None:
+        print("Not enough exam data (need at least 3 scores for this subject).")
+    else:
+        print(f"Prediction MAE for {s['name']} in {subject}: "
+              f"{mae:.2f} percentage points")
+
+
 def main():
     initialize_db()
     actions = {
@@ -155,6 +179,7 @@ def main():
         "7": class_chart_flow,
         "8": list_students_flow,
         "9": delete_student_flow,
+        "10": prediction_error_flow,
     }
     while True:
         menu()
